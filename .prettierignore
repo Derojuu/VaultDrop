@@ -1,0 +1,7 @@
+.next
+node_modules
+pnpm-lock.yaml
+public
+_design_reference
+next-env.d.ts
+*.md
