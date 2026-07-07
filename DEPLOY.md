@@ -18,10 +18,10 @@ Set these in Vercel → Project → Settings → Environment Variables. They mir
 
 | Variable | Required | Value |
 | --- | --- | --- |
-| `DATABASE_URL` | ✅ | Supabase **pooler** connection string. |
-| `NEXT_PUBLIC_APP_URL` | ✅ | Your deployment URL, e.g. `https://vaultdrop.vercel.app`. |
-| `NEXT_PUBLIC_FLARE_NETWORK` | ✅ | `coston2` |
-| `ENCLAVE_MODE` | ✅ | `simulated` |
+| `DATABASE_URL` | Yes | Supabase **pooler** connection string. |
+| `NEXT_PUBLIC_APP_URL` | Yes | Your deployment URL, e.g. `https://vaultdrop.vercel.app`. |
+| `NEXT_PUBLIC_FLARE_NETWORK` | Yes | `coston2` |
+| `ENCLAVE_MODE` | Yes | `simulated` |
 | `FCE_PROXY_URL` | — | Only for `ENCLAVE_MODE=coston2`. |
 | `FLARE_RPC_URL` | — | Optional Coston2 RPC override. |
 

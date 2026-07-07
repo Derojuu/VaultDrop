@@ -4,18 +4,46 @@
 
 **Every file has rules — because the key lives where no one can touch it.**
 
-A secure file-sharing app where the decryption key is sealed inside a Flare Confidential Compute
-enclave and released **only** when the recipient provably satisfies the sender's access conditions.
+A secure file-sharing app where a file's decryption key is sealed inside a **Flare Confidential
+Compute** enclave and released **only** when the recipient provably satisfies the sender's access
+conditions. No server — not even VaultDrop's — can read the file or hand out the key.
 
-Web app · [Demo](#watch-the-demo) · [Pitch](./PITCH.md) · [Deploy guide](./DEPLOY.md) · [Source](https://github.com/Derojuu/VaultDrop)
+| | |
+| --- | --- |
+| **Bounty** | Flare Summer Signal — #2 Confidential Compute Apps |
+| **Network** | Coston2 (Flare testnet) — read-only, on-chain condition checks |
+| **Enclave** | `simulated` on the hosted demo · real-hardware path is a config flip |
+| **Status** | Deploy-ready · `typecheck` + `lint` + `build` clean |
+| **Stack** | Next.js 16 · React 19 · viem · Web Crypto · Supabase Postgres |
 
-> **Bounty:** Flare Summer Signal — #2 Confidential Compute Apps.
+**Quick links (for judges):**
+[Demo video](#watch-the-demo) · [Live app](#live-deployments) · [Pitch deck](./PITCH.md) · [Deploy runbook](./DEPLOY.md) · [Load-bearing files](#load-bearing-files-for-judges) · [Source](https://github.com/Derojuu/VaultDrop)
+
+---
+
+## Overview
+
+**The problem.** Once you share a file link, you've lost control. Links get forwarded, passwords get
+reused, and the platform holding your file can be breached or compelled to hand it over. For anyone
+sharing genuinely sensitive material — contracts, credentials, deal docs, source, media — "hope no
+one misuses the link" is the current state of the art.
+
+**The solution.** VaultDrop turns each file into a **sealed vault**: encrypted in your browser, its
+key wrapped to a confidential-compute enclave alongside the sender's policy — never stored on a
+server, never placed in the share link. The enclave releases the key **only** when a recipient
+provably satisfies every condition, and it **signs the decision** so anyone can verify the release
+came from the enclave and not the operator. The question changes from *"who has the link?"* to
+*"who has provably satisfied every rule?"*
+
+**Who it's for.** Freelancers and agencies delivering payment-gated files (*"the key releases only
+after the client holds the access token"*) — plus legal/NDA delivery, dealmakers sharing diligence
+docs, and creators gating media.
 
 ---
 
 ## Watch the demo
 
-▶ **`<< link to your 2–3 min demo video — see DEMO.md for the script >>`**
+**`<< link to your 2–3 min demo video — see DEMO.md for the script >>`**
 
 **Seal it. Share it. The key never touches a server.** A file is encrypted in your browser, and its
 key is wrapped to a confidential-compute enclave — never stored on a server, never placed in the
@@ -25,7 +53,7 @@ public moments are named every time: the **ciphertext** is stored on the server,
 condition checks** (wallet / token / NFT) read Flare's Coston2 testnet — everything about the key
 itself stays inside the enclave.
 
-> ⚠️ **Unaudited hackathon software.** The hosted demo runs the enclave in **simulated** mode — the
+> **Unaudited hackathon software.** The hosted demo runs the enclave in **simulated** mode — the
 > real ECIES key-custody and ECDSA attestation protocol, running in-process rather than inside AMD
 > SEV hardware. Testnet (Coston2) is the only network touched, and only for read-only condition
 
@@ -52,6 +80,21 @@ The app needs only a Supabase Postgres URL and a few env vars; the database sche
 identity **initialize themselves on first request** — there is no separate migration or key-setup
 step. Networks are a config toggle: `ENCLAVE_MODE=simulated` (hosted demo) ↔ `coston2` (real FCE
 extension) with no code change.
+
+---
+
+## How it compares
+
+| | Key custody | Private conditions<br>(secret passphrase / allowlist) | Operator can override? |
+| --- | --- | --- | --- |
+| **Centralized** (Dropbox, DocSend, WeTransfer, Tresorit) | Platform holds the key | In code you must trust | **Yes** — a breach, insider, or subpoena exposes it |
+| **Smart contract / transparent chain alone** | Key would be on-chain | No — can't evaluate a *secret* on a public ledger | N/A |
+| **Lit Protocol** | Threshold MPC across a node network | Yes | Depends on the node set |
+| **VaultDrop** | Sealed in a Flare Confidential Compute enclave | Yes — evaluated privately in-enclave | **No** — operator is cryptographically incapable |
+
+Lit is the comparison a technical judge will raise: it uses threshold MPC across a node network;
+VaultDrop uses **TEE-based confidential compute native to an EVM L1**, so policy evaluation, key
+custody, and on-chain checks live in one trust domain — on Flare.
 
 ---
 
@@ -96,10 +139,10 @@ Environment variables (full list in [`.env.example`](./.env.example), runbook in
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `DATABASE_URL` | ✅ | Supabase Postgres (use the **pooler** URL). |
-| `NEXT_PUBLIC_APP_URL` | ✅ | Canonical app URL. |
-| `NEXT_PUBLIC_FLARE_NETWORK` | ✅ | `coston2` |
-| `ENCLAVE_MODE` | ✅ | `simulated` (default) or `coston2`. |
+| `DATABASE_URL` | Yes | Supabase Postgres (use the **pooler** URL). |
+| `NEXT_PUBLIC_APP_URL` | Yes | Canonical app URL. |
+| `NEXT_PUBLIC_FLARE_NETWORK` | Yes | `coston2` |
+| `ENCLAVE_MODE` | Yes | `simulated` (default) or `coston2`. |
 | `FCE_PROXY_URL` | — | Only for `ENCLAVE_MODE=coston2`. |
 | `FLARE_RPC_URL` | — | Optional Coston2 RPC override. |
 
@@ -130,6 +173,20 @@ services/             browser-side API + enclave handshake clients
 hooks/ · store/ · types/ · utils/    hooks, Zustand state, shared types, helpers
 ```
 
+### Load-bearing files (for judges)
+
+The Flare integration *is* the product, not a bolt-on. To review it fast, read these seven files:
+
+| File | What to look for |
+| --- | --- |
+| `lib/enclave/engine.ts` | The `EnclaveEngine` interface + the `ENCLAVE_MODE` switch (simulated ↔ real Coston2). |
+| `lib/enclave/simulated.ts` | The seal / unlock protocol, in-enclave policy evaluation, and signed attestation. |
+| `lib/enclave/policy.ts` | Every access condition evaluated **inside** the enclave boundary. |
+| `lib/enclave/attestation.ts` | ECDSA-signed decision receipts — the "made in the enclave, not by the operator" proof. |
+| `lib/chain/coston2.ts` | Live Coston2 reads — ERC-20 balance / ERC-721 ownership for token/NFT gating. |
+| `lib/chain/wallet.ts` | The vault-bound challenge + signature recovery that proves wallet control. |
+| `app/api/enclave/{seal,unlock,info}/route.ts` | The HTTP boundary the browser talks to. |
+
 ---
 
 ## Architecture
@@ -142,15 +199,15 @@ never the content key.
 
 ```
 SEAL (sender's browser)
-  file ──AES-256-GCM──▶ ciphertext ─────────────▶ Postgres (ciphertext only)
-  content key ──ECIES-wrap to enclave pubkey──▶ enclave stores {wrapped key, policy}
-  share link = /v/<id>              ◀── no key in the link
+  file ──AES-256-GCM──> ciphertext ─────────────> Postgres (ciphertext only)
+  content key ──ECIES-wrap to enclave pubkey──> enclave stores {wrapped key, policy}
+  share link = /v/<id>              <── no key in the link
 
 UNLOCK (recipient's browser)
-  proofs (passphrase / wallet sig / …) ──ECIES-wrap to enclave──▶ enclave
+  proofs (passphrase / wallet sig / …) ──ECIES-wrap to enclave──> enclave
   enclave evaluates EVERY condition in-boundary
-    ├─ fail ─▶ signed DENIAL (no key released)
-    └─ pass ─▶ content key re-wrapped to recipient  +  ECDSA attestation
+    ├─ fail ─> signed DENIAL (no key released)
+    └─ pass ─> content key re-wrapped to recipient  +  ECDSA attestation
   recipient unwraps key, verifies attestation, decrypts file locally
 ```
 
@@ -204,6 +261,18 @@ read-only.
   ownership, plus a signature-recovery challenge that proves wallet control.
 - **VaultDrop deploys no contracts of its own** — it *reads* existing Coston2 token/NFT contracts you
   point conditions at. The default RPC is the public Coston2 endpoint (override with `FLARE_RPC_URL`).
+
+---
+
+## How this maps to the judging criteria
+
+| Criterion | How VaultDrop hits it |
+| --- | --- |
+| **Product usefulness** | Solves real loss-of-control in file sharing, with a clear commercial user (payment-gated delivery). |
+| **Flare integration quality** | Key custody + private policy evaluation *inside* Confidential Compute, plus live Coston2 reads for token/NFT gating. This is the whole product, not a bolt-on. |
+| **Technical execution** | One tight, working demo; real client-side encryption; a signed attestation anyone can re-verify; deploy-ready. |
+| **Evidence of new work** | The entire enclave + on-chain proof layer was built during the program. |
+| **Clarity & future potential** | One-sentence pitch, one beachhead user, credible roadmap. |
 
 ---
 
