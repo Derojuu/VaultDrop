@@ -23,8 +23,8 @@ export function GetStarted() {
       <Stagger className="mt-11 grid gap-4.5 md:grid-cols-2">
         {/* Senders */}
         <StaggerItem>
-          <article className="relative min-h-[320px] overflow-hidden rounded-[24px] border border-white/12 bg-[radial-gradient(120%_130%_at_82%_-10%,rgba(123,92,255,0.55),transparent_60%),radial-gradient(110%_120%_at_10%_110%,rgba(94,124,250,0.5),transparent_62%),linear-gradient(160deg,#191a2e,#101018_70%)] p-[30px] shadow-[0_50px_110px_-60px_#000]">
-            <div className="relative z-[1] flex max-w-[58%] flex-col items-start gap-3.5">
+          <article className="relative min-h-[220px] overflow-hidden rounded-[24px] border border-white/12 bg-[radial-gradient(120%_130%_at_82%_-10%,rgba(123,92,255,0.55),transparent_60%),radial-gradient(110%_120%_at_10%_110%,rgba(94,124,250,0.5),transparent_62%),linear-gradient(160deg,#191a2e,#101018_70%)] p-6 shadow-[0_50px_110px_-60px_#000] sm:p-[30px] md:min-h-[320px]">
+            <div className="relative z-[1] flex flex-col items-start gap-3.5 md:max-w-[58%]">
               <span className="text-vd-accent2 font-mono text-[10.5px] font-bold tracking-[0.12em] uppercase">
                 For senders
               </span>
@@ -58,8 +58,8 @@ export function GetStarted() {
 
         {/* Recipients */}
         <StaggerItem>
-          <article className="relative min-h-[320px] overflow-hidden rounded-[24px] border border-white/12 bg-[radial-gradient(120%_130%_at_82%_-10%,rgba(94,124,250,0.5),transparent_60%),radial-gradient(110%_120%_at_10%_110%,rgba(53,199,123,0.28),transparent_62%),linear-gradient(160deg,#141d22,#101018_70%)] p-[30px] shadow-[0_50px_110px_-60px_#000]">
-            <div className="relative z-[1] flex max-w-[58%] flex-col items-start gap-3.5">
+          <article className="relative min-h-[220px] overflow-hidden rounded-[24px] border border-white/12 bg-[radial-gradient(120%_130%_at_82%_-10%,rgba(94,124,250,0.5),transparent_60%),radial-gradient(110%_120%_at_10%_110%,rgba(53,199,123,0.28),transparent_62%),linear-gradient(160deg,#141d22,#101018_70%)] p-6 shadow-[0_50px_110px_-60px_#000] sm:p-[30px] md:min-h-[320px]">
+            <div className="relative z-[1] flex flex-col items-start gap-3.5 md:max-w-[58%]">
               <span className="text-vd-pos font-mono text-[10.5px] font-bold tracking-[0.12em] uppercase">
                 For recipients
               </span>

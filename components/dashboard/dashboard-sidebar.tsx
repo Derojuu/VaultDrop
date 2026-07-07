@@ -5,11 +5,14 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ChevronsLeft,
+  Loader2,
+  LogOut,
   PanelLeft,
   Plus,
-  ShieldCheck,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { LogoMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
@@ -21,7 +24,9 @@ import {
 } from "@/lib/dashboard-nav";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/store/ui-store";
+import { useWalletStore } from "@/store/wallet-store";
 import type { VaultStatus } from "@/types";
+import { truncateMiddle } from "@/utils/format";
 
 const STATUS_TONE: Record<VaultStatus, string> = {
   active: "pos",
@@ -93,6 +98,19 @@ function SidebarBody({ scope }: { scope: "desktop" | "mobile" }) {
 
   const { data: vaults } = useVaults();
   const recent = (vaults ?? []).slice(0, 5);
+
+  const address = useWalletStore((s) => s.address);
+  const connecting = useWalletStore((s) => s.connecting);
+  const connect = useWalletStore((s) => s.connect);
+  const disconnect = useWalletStore((s) => s.disconnect);
+
+  async function onConnect() {
+    try {
+      await connect();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't connect a wallet.");
+    }
+  }
 
   return (
     <div className="flex h-full flex-col gap-4 p-3">
@@ -203,32 +221,65 @@ function SidebarBody({ scope }: { scope: "desktop" | "mobile" }) {
           />
         ))}
 
-        <div
-          className={cn(
-            "border-vd-bd bg-vd-card mt-1 flex items-center gap-2.5 rounded-[11px] border p-2.5",
-            collapsed && "justify-center border-transparent bg-transparent p-1",
-          )}
-        >
-          <span className="size-7 shrink-0 rounded-full bg-[linear-gradient(135deg,#8a9bff,#5e7cfa)]" />
-          {!collapsed && (
-            <>
-              <div className="min-w-0 leading-tight">
-                <div className="text-vd-tx truncate text-[12.5px] font-semibold">
-                  Personal
-                </div>
-                <div className="text-vd-tx3 truncate font-mono text-[10px]">
-                  0x9x…7p4a
-                </div>
+        {collapsed ? (
+          <button
+            onClick={address ? disconnect : onConnect}
+            disabled={connecting}
+            title={
+              address
+                ? `${truncateMiddle(address)} · click to disconnect`
+                : "Connect wallet"
+            }
+            className="mx-auto grid size-8 place-items-center rounded-full bg-[linear-gradient(135deg,#8a9bff,#5e7cfa)] disabled:opacity-60"
+          >
+            {connecting ? (
+              <Loader2 className="size-3.5 animate-spin text-white" />
+            ) : address ? null : (
+              <Wallet className="size-3.5 text-white" />
+            )}
+          </button>
+        ) : address ? (
+          <div className="border-vd-bd bg-vd-card mt-1 flex items-center gap-2.5 rounded-[11px] border p-2.5">
+            <span className="size-7 shrink-0 rounded-full bg-[linear-gradient(135deg,#8a9bff,#5e7cfa)]" />
+            <div className="min-w-0 leading-tight">
+              <div className="text-vd-tx text-[12.5px] font-semibold">
+                Wallet
               </div>
-              <span
-                className="border-vd-bd text-vd-pos ml-auto inline-flex items-center gap-1 rounded-full border px-1.5 py-1 font-mono text-[8px] tracking-[0.08em]"
-                title="Coston2 testnet"
-              >
-                <ShieldCheck className="size-2.5" />
-              </span>
-            </>
-          )}
-        </div>
+              <div className="text-vd-tx3 truncate font-mono text-[10px]">
+                {truncateMiddle(address)}
+              </div>
+            </div>
+            <button
+              onClick={disconnect}
+              title="Disconnect"
+              className="text-vd-tx3 hover:text-vd-dng ml-auto grid size-7 shrink-0 place-items-center rounded-[8px] transition-colors hover:bg-white/[0.05]"
+            >
+              <LogOut className="size-3.5" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={onConnect}
+            disabled={connecting}
+            className="border-vd-bd bg-vd-card mt-1 flex items-center gap-2.5 rounded-[11px] border p-2.5 text-left transition-colors hover:bg-white/[0.05] disabled:opacity-60"
+          >
+            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,#8a9bff,#5e7cfa)]">
+              {connecting ? (
+                <Loader2 className="size-3.5 animate-spin text-white" />
+              ) : (
+                <Wallet className="size-3.5 text-white" />
+              )}
+            </span>
+            <div className="min-w-0 leading-tight">
+              <div className="text-vd-tx text-[12.5px] font-semibold">
+                {connecting ? "Connecting…" : "Connect wallet"}
+              </div>
+              <div className="text-vd-tx3 truncate text-[10px]">
+                Prove address ownership
+              </div>
+            </div>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -244,7 +295,7 @@ export function DashboardSidebar() {
       {/* Desktop rail */}
       <aside
         className={cn(
-          "border-vd-bd bg-vd-side sticky top-0 hidden h-dvh shrink-0 border-r transition-[width] duration-200 md:block",
+          "border-vd-bd bg-vd-side hidden h-dvh shrink-0 overflow-hidden border-r transition-[width] duration-200 md:block",
           collapsed ? "w-[72px]" : "w-[264px]",
         )}
       >

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
   Cpu,
@@ -16,11 +15,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { MonoLabel } from "@/components/ui/mono-label";
 import { StatusPill } from "@/components/ui/status-pill";
-import { connectWallet } from "@/lib/chain/wallet";
 import { FLARE_NETWORKS, MAX_UPLOAD_BYTES } from "@/lib/constants";
 import { env } from "@/lib/env";
 import { useEnclaveInfo } from "@/hooks/use-enclave";
 import { cn } from "@/lib/utils";
+import { useWalletStore } from "@/store/wallet-store";
 import { formatBytes, truncateMiddle } from "@/utils/format";
 
 /** A labelled key/value row inside a settings card. */
@@ -70,17 +69,15 @@ export function SettingsView() {
   const { data: info, isLoading } = useEnclaveInfo();
   const net = FLARE_NETWORKS[env.NEXT_PUBLIC_FLARE_NETWORK];
 
-  const [wallet, setWallet] = useState<string | null>(null);
-  const [connecting, setConnecting] = useState(false);
+  const wallet = useWalletStore((s) => s.address);
+  const connecting = useWalletStore((s) => s.connecting);
+  const connect = useWalletStore((s) => s.connect);
 
   async function onConnect() {
-    setConnecting(true);
     try {
-      setWallet(await connectWallet());
+      await connect();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't connect a wallet.");
-    } finally {
-      setConnecting(false);
     }
   }
 
