@@ -293,10 +293,10 @@ function SidebarBody({ scope }: { scope: "desktop" | "mobile" }) {
               href={GET_WALLET_URL}
               target="_blank"
               rel="noreferrer"
-              className="text-vd-accent2 hover:text-vd-accent inline-flex items-center gap-1.5 text-[11.5px] font-medium"
+              className="border-vd-bd2 bg-vd-card2 text-vd-accent2 hover:border-vd-accent2/40 hover:text-vd-accent inline-flex items-center justify-center gap-1.5 rounded-[9px] border px-2.5 py-1.5 text-[11.5px] font-semibold transition-colors"
             >
               <Download className="size-3" />
-              Get a wallet
+              Install a wallet
             </a>
           </div>
         ) : (

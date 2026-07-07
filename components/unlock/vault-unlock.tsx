@@ -292,16 +292,20 @@ export function VaultUnlock({ id }: { id: string }) {
                       <ShieldAlert className="text-vd-warn mt-0.5 size-4 shrink-0" />
                       <p className="text-vd-tx2 text-[12px] leading-relaxed">
                         This vault is gated on a wallet, but no browser wallet is
-                        installed. You&apos;ll need one to prove ownership and
-                        unlock.
+                        installed. Install one, refresh this page, then connect to
+                        prove ownership.
                       </p>
                     </div>
                     <Button asChild variant="secondary" size="sm" className="w-fit">
                       <a href={GET_WALLET_URL} target="_blank" rel="noreferrer">
                         <Download />
-                        Get a wallet
+                        Install a wallet extension
                       </a>
                     </Button>
+                    <p className="text-vd-tx3 text-[11px] leading-relaxed">
+                      Opens metamask.io — a free browser extension. Any EVM wallet
+                      works; no funds needed, just a signature.
+                    </p>
                   </div>
                 ) : (
                   <Button

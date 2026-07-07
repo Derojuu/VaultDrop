@@ -236,9 +236,12 @@ export function SettingsView() {
             <Button asChild variant="secondary" size="sm" className="w-fit">
               <a href={GET_WALLET_URL} target="_blank" rel="noreferrer">
                 <Download />
-                Get a wallet
+                Install a wallet extension
               </a>
             </Button>
+            <p className="text-vd-tx3 text-[11px]">
+              Opens metamask.io — a free browser extension. Any EVM wallet works.
+            </p>
           </div>
         ) : (
           <Button
