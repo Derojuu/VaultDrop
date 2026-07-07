@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ChevronsLeft,
+  Download,
   Loader2,
   LogOut,
   PanelLeft,
@@ -17,6 +18,8 @@ import { toast } from "sonner";
 import { LogoMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { useVaults } from "@/hooks/use-vaults";
+import { useWalletAvailable } from "@/hooks/use-wallet-available";
+import { GET_WALLET_URL } from "@/lib/chain/wallet";
 import {
   DASHBOARD_NAV,
   DASHBOARD_NAV_SECONDARY,
@@ -103,6 +106,8 @@ function SidebarBody({ scope }: { scope: "desktop" | "mobile" }) {
   const connecting = useWalletStore((s) => s.connecting);
   const connect = useWalletStore((s) => s.connect);
   const disconnect = useWalletStore((s) => s.disconnect);
+  const walletAvailable = useWalletAvailable();
+  const noWallet = walletAvailable === false && !address;
 
   async function onConnect() {
     try {
@@ -222,22 +227,34 @@ function SidebarBody({ scope }: { scope: "desktop" | "mobile" }) {
         ))}
 
         {collapsed ? (
-          <button
-            onClick={address ? disconnect : onConnect}
-            disabled={connecting}
-            title={
-              address
-                ? `${truncateMiddle(address)} · click to disconnect`
-                : "Connect wallet"
-            }
-            className="mx-auto grid size-8 place-items-center rounded-full bg-[linear-gradient(135deg,#8a9bff,#5e7cfa)] disabled:opacity-60"
-          >
-            {connecting ? (
-              <Loader2 className="size-3.5 animate-spin text-white" />
-            ) : address ? null : (
-              <Wallet className="size-3.5 text-white" />
-            )}
-          </button>
+          noWallet ? (
+            <a
+              href={GET_WALLET_URL}
+              target="_blank"
+              rel="noreferrer"
+              title="No wallet detected — get one (optional)"
+              className="border-vd-bd text-vd-tx3 hover:text-vd-tx mx-auto grid size-8 place-items-center rounded-full border transition-colors hover:bg-white/[0.05]"
+            >
+              <Download className="size-3.5" />
+            </a>
+          ) : (
+            <button
+              onClick={address ? disconnect : onConnect}
+              disabled={connecting}
+              title={
+                address
+                  ? `${truncateMiddle(address)} · click to disconnect`
+                  : "Connect wallet"
+              }
+              className="mx-auto grid size-8 place-items-center rounded-full bg-[linear-gradient(135deg,#8a9bff,#5e7cfa)] disabled:opacity-60"
+            >
+              {connecting ? (
+                <Loader2 className="size-3.5 animate-spin text-white" />
+              ) : address ? null : (
+                <Wallet className="size-3.5 text-white" />
+              )}
+            </button>
+          )
         ) : address ? (
           <div className="border-vd-bd bg-vd-card mt-1 flex items-center gap-2.5 rounded-[11px] border p-2.5">
             <span className="size-7 shrink-0 rounded-full bg-[linear-gradient(135deg,#8a9bff,#5e7cfa)]" />
@@ -256,6 +273,31 @@ function SidebarBody({ scope }: { scope: "desktop" | "mobile" }) {
             >
               <LogOut className="size-3.5" />
             </button>
+          </div>
+        ) : noWallet ? (
+          <div className="border-vd-bd bg-vd-card mt-1 flex flex-col gap-2 rounded-[11px] border p-2.5">
+            <div className="flex items-center gap-2.5">
+              <span className="border-vd-bd bg-vd-card2 text-vd-tx3 grid size-7 shrink-0 place-items-center rounded-full border">
+                <Wallet className="size-3.5" />
+              </span>
+              <div className="min-w-0 leading-tight">
+                <div className="text-vd-tx text-[12.5px] font-semibold">
+                  No wallet detected
+                </div>
+                <div className="text-vd-tx3 text-[10px]">
+                  Optional — only to unlock gated vaults
+                </div>
+              </div>
+            </div>
+            <a
+              href={GET_WALLET_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="text-vd-accent2 hover:text-vd-accent inline-flex items-center gap-1.5 text-[11.5px] font-medium"
+            >
+              <Download className="size-3" />
+              Get a wallet
+            </a>
           </div>
         ) : (
           <button

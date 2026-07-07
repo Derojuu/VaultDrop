@@ -18,7 +18,11 @@ import {
 import { toast } from "sonner";
 
 import { AttestationReceipt } from "@/components/attestation/attestation-receipt";
-import { connectWallet, signUnlockChallenge } from "@/lib/chain/wallet";
+import {
+  connectWallet,
+  GET_WALLET_URL,
+  signUnlockChallenge,
+} from "@/lib/chain/wallet";
 import type { Attestation } from "@/lib/enclave/attestation";
 
 import { Logo } from "@/components/brand/logo";
@@ -29,6 +33,7 @@ import { MonoLabel } from "@/components/ui/mono-label";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useMounted } from "@/hooks/use-mounted";
 import { useVault } from "@/hooks/use-vaults";
+import { useWalletAvailable } from "@/hooks/use-wallet-available";
 import { CONDITION_META } from "@/lib/conditions";
 import { sha256Hex } from "@/lib/crypto/bytes";
 import { openSealedFile } from "@/lib/crypto/content-cipher";
@@ -81,6 +86,8 @@ export function VaultUnlock({ id }: { id: string }) {
   const needsWallet = !!vault?.conditions.some((c) =>
     ["wallet", "token", "nft"].includes(c.kind),
   );
+  const walletAvailable = useWalletAvailable();
+  const noWallet = walletAvailable === false && !walletAddr;
 
   async function connect() {
     setErr(null);
@@ -278,6 +285,23 @@ export function VaultUnlock({ id }: { id: string }) {
                     >
                       Change
                     </button>
+                  </div>
+                ) : noWallet ? (
+                  <div className="border-vd-warn/30 bg-vd-warn/[0.05] flex flex-col gap-2.5 rounded-[10px] border px-3 py-3">
+                    <div className="flex items-start gap-2.5">
+                      <ShieldAlert className="text-vd-warn mt-0.5 size-4 shrink-0" />
+                      <p className="text-vd-tx2 text-[12px] leading-relaxed">
+                        This vault is gated on a wallet, but no browser wallet is
+                        installed. You&apos;ll need one to prove ownership and
+                        unlock.
+                      </p>
+                    </div>
+                    <Button asChild variant="secondary" size="sm" className="w-fit">
+                      <a href={GET_WALLET_URL} target="_blank" rel="noreferrer">
+                        <Download />
+                        Get a wallet
+                      </a>
+                    </Button>
                   </div>
                 ) : (
                   <Button

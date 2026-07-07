@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   Cpu,
+  Download,
   KeyRound,
   Loader2,
   Lock,
@@ -15,9 +16,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { MonoLabel } from "@/components/ui/mono-label";
 import { StatusPill } from "@/components/ui/status-pill";
+import { GET_WALLET_URL } from "@/lib/chain/wallet";
 import { FLARE_NETWORKS, MAX_UPLOAD_BYTES } from "@/lib/constants";
 import { env } from "@/lib/env";
 import { useEnclaveInfo } from "@/hooks/use-enclave";
+import { useWalletAvailable } from "@/hooks/use-wallet-available";
 import { cn } from "@/lib/utils";
 import { useWalletStore } from "@/store/wallet-store";
 import { formatBytes, truncateMiddle } from "@/utils/format";
@@ -72,6 +75,7 @@ export function SettingsView() {
   const wallet = useWalletStore((s) => s.address);
   const connecting = useWalletStore((s) => s.connecting);
   const connect = useWalletStore((s) => s.connect);
+  const walletAvailable = useWalletAvailable();
 
   async function onConnect() {
     try {
@@ -222,6 +226,20 @@ export function SettingsView() {
               {truncateMiddle(wallet, 12, 8)}
             </span>
           </Row>
+        ) : walletAvailable === false ? (
+          <div className="flex flex-col items-start gap-2.5">
+            <p className="text-vd-tx2 text-[12.5px]">
+              No browser wallet detected. A wallet is{" "}
+              <span className="text-vd-tx">optional</span> — you only need one to
+              unlock wallet-, token-, or NFT-gated vaults, never to create them.
+            </p>
+            <Button asChild variant="secondary" size="sm" className="w-fit">
+              <a href={GET_WALLET_URL} target="_blank" rel="noreferrer">
+                <Download />
+                Get a wallet
+              </a>
+            </Button>
+          </div>
         ) : (
           <Button
             onClick={onConnect}

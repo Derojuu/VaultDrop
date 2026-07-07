@@ -20,6 +20,21 @@ function provider(): EIP1193Provider {
   return eth;
 }
 
+/** Where users without a wallet can get one. */
+export const GET_WALLET_URL = "https://metamask.io/download/";
+
+/**
+ * Whether an injected EIP-1193 wallet is present in this browser. Client-only —
+ * returns false during SSR. A wallet is optional in VaultDrop: it's only needed
+ * to unlock wallet-, token-, or NFT-gated vaults, never to create them.
+ */
+export function hasInjectedWallet(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    !!(window as unknown as { ethereum?: EIP1193Provider }).ethereum
+  );
+}
+
 /** Prompt the wallet to connect; returns the selected address. */
 export async function connectWallet(): Promise<string> {
   const client = createWalletClient({ transport: custom(provider()) });
