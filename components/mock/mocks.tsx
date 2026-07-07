@@ -293,7 +293,7 @@ export function ShareCard() {
           Vault sealed
         </div>
         <div className="text-vd-tx2 mt-1 text-[11.5px] leading-relaxed">
-          Share the link — the key rides in its # fragment.
+          Key sealed in the enclave — released only on a passing policy.
         </div>
       </div>
 

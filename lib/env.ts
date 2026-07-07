@@ -19,11 +19,17 @@ const serverSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
-  // Optional until the backend/enclave integration lands — kept lenient so the
-  // app boots in local dev without a full secret set.
-  STORAGE_ENDPOINT: z.string().url().optional(),
-  STORAGE_BUCKET: z.string().optional(),
+  // Postgres (Supabase). Either var works; the db client prefers DATABASE_URL.
+  // Optional so the app still boots without a DB; the API returns a clear
+  // error at request time if neither is set.
+  DATABASE_URL: z.string().optional(),
+  POSTGRES_URL: z.string().optional(),
   FLARE_RPC_URL: z.string().url().optional(),
+  // Which enclave backs key custody. "simulated" runs in-process (default, and
+  // what the hosted demo uses); "coston2" targets the real Flare FCC extension.
+  ENCLAVE_MODE: z.enum(["simulated", "coston2"]).default("simulated"),
+  // Only needed when ENCLAVE_MODE=coston2 — the FCE ext-proxy endpoint.
+  FCE_PROXY_URL: z.string().url().optional(),
 });
 
 /** Only `NEXT_PUBLIC_*` vars are statically inlined by Next, so list them explicitly. */

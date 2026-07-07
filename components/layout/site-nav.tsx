@@ -16,7 +16,7 @@ export function SiteNav() {
   return (
     <header className="glass-pill sticky top-3.5 z-50 mx-auto mt-4 flex w-[min(920px,calc(100%-2rem))] items-center gap-5 py-2.5 pr-2.5 pl-4">
       <Link href="/" aria-label="VaultDrop home">
-        <Logo />
+        <Logo markClassName="size-10" wordmarkClassName="text-[17px]" />
       </Link>
 
       <nav

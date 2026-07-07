@@ -48,9 +48,24 @@ export type VaultEventType =
 export interface VaultEvent {
   id: string;
   vaultId: string;
+  /** Denormalized vault name for feed display (joined at read time). */
+  vaultName?: string;
   type: VaultEventType;
   at: string;
+  /** Proven wallet address — present only for wallet-gated unlocks. */
+  wallet?: string;
+  /** Enclave code measurement that made the decision. */
+  measurement?: string;
   meta?: Record<string, unknown>;
+}
+
+/** A recipient the enclave has cryptographically identified (wallet-gated). */
+export interface Recipient {
+  wallet: string;
+  unlocks: number;
+  denials: number;
+  lastAt: string;
+  vaultIds: string[];
 }
 
 /** Generic paginated API envelope. */

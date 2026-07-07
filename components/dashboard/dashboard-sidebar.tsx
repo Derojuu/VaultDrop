@@ -13,12 +13,12 @@ import {
 
 import { LogoMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
+import { useVaults } from "@/hooks/use-vaults";
 import {
   DASHBOARD_NAV,
   DASHBOARD_NAV_SECONDARY,
   type NavItem,
 } from "@/lib/dashboard-nav";
-import { MOCK_VAULTS } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/store/ui-store";
 import type { VaultStatus } from "@/types";
@@ -91,7 +91,8 @@ function SidebarBody({ scope }: { scope: "desktop" | "mobile" }) {
   const toggle = useUiStore((s) => s.toggleSidebar);
   const setMobile = useUiStore((s) => s.setMobileNavOpen);
 
-  const recent = MOCK_VAULTS.slice(0, 5);
+  const { data: vaults } = useVaults();
+  const recent = (vaults ?? []).slice(0, 5);
 
   return (
     <div className="flex h-full flex-col gap-4 p-3">
@@ -166,7 +167,7 @@ function SidebarBody({ scope }: { scope: "desktop" | "mobile" }) {
       </nav>
 
       {/* Recent vaults (history rail) */}
-      {!collapsed && (
+      {!collapsed && recent.length > 0 && (
         <div className="flex min-h-0 flex-1 flex-col">
           <span className="mono-label px-2 pb-2">Recent vaults</span>
           <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">

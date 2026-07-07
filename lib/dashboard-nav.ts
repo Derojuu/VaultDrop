@@ -1,5 +1,6 @@
 import {
   Activity,
+  Cpu,
   LayoutGrid,
   Link2,
   Settings,
@@ -24,5 +25,6 @@ export const DASHBOARD_NAV: NavItem[] = [
 ];
 
 export const DASHBOARD_NAV_SECONDARY: NavItem[] = [
+  { label: "Enclave", href: "/enclave", icon: Cpu },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];

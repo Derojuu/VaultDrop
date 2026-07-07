@@ -89,15 +89,24 @@ export function LogoMark({ className }: { className?: string }) {
 export function Logo({
   className,
   withWordmark = true,
+  markClassName,
+  wordmarkClassName,
 }: {
   className?: string;
   withWordmark?: boolean;
+  markClassName?: string;
+  wordmarkClassName?: string;
 }) {
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <LogoMark />
+      <LogoMark className={markClassName} />
       {withWordmark && (
-        <span className="text-vd-tx text-[15px] font-extrabold tracking-[-0.02em]">
+        <span
+          className={cn(
+            "text-vd-tx text-[15px] font-extrabold tracking-[-0.02em]",
+            wordmarkClassName,
+          )}
+        >
           VaultDrop
         </span>
       )}

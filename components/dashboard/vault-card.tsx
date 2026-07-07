@@ -18,7 +18,7 @@ export function VaultCard({ vault }: { vault: Vault }) {
   const isDead = vault.status === "revoked" || vault.status === "expired";
 
   async function copyLink() {
-    const url = `https://vaultdrop.app/v/${vault.id.replace("vlt_", "")}`;
+    const url = `${window.location.origin}/v/${vault.id}`;
     await navigator.clipboard?.writeText(url).catch(() => {});
     setCopied(true);
     toast.success("Share link copied");

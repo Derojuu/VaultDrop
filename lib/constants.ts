@@ -51,7 +51,10 @@ export const CONDITION_KINDS = [
 
 export type ConditionKind = (typeof CONDITION_KINDS)[number];
 
-export const MAX_UPLOAD_BYTES = 100 * 1024 * 1024; // 100 MB
+// 4 MB — safely under Vercel's ~4.5 MB serverless request-body limit (the
+// ciphertext is PUT through a Node function). Raise this only alongside a
+// direct-to-storage upload path that bypasses the function. See DEPLOY.md.
+export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
 export const ROUTES = {
   home: "/",

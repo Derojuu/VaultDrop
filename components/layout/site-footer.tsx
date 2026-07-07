@@ -6,9 +6,9 @@ export function SiteFooter() {
   return (
     <footer className="border-vd-bd mx-auto flex w-[min(1180px,calc(100%-2.5rem))] flex-wrap items-center gap-5 border-t px-1 pt-[26px] pb-[34px]">
       <div className="flex items-center gap-3">
-        <LogoMark className="size-[26px]" />
+        <LogoMark className="size-11" />
         <div className="leading-tight">
-          <strong className="text-vd-tx block text-[14px] tracking-[-0.01em]">
+          <strong className="text-vd-tx block text-[16px] tracking-[-0.01em]">
             VaultDrop
           </strong>
           <span className="text-vd-tx3 block text-[11.5px]">

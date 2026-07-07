@@ -3,9 +3,9 @@
  *
  * Model: every vault gets a random 256-bit Content Encryption Key (CEK). The
  * file is encrypted with it client-side; only the ciphertext ever leaves the
- * browser. The CEK is the single secret the enclave will later custody and
- * release on policy (see [[flare-confidential-compute]]). Until then it travels
- * in the share-link fragment (never sent to any server).
+ * browser. The CEK is sealed to the enclave (ECIES-wrapped in the browser) and
+ * released only when a recipient satisfies the policy — see services/enclave.ts
+ * and lib/enclave/. It is never stored on a server and never in the link.
  */
 import {
   base64ToBytes,
@@ -26,7 +26,7 @@ export async function generateContentKey(): Promise<CryptoKey> {
   ]);
 }
 
-/** Export the raw CEK as URL-safe base64 (for the link fragment / enclave handoff). */
+/** Export the raw CEK as URL-safe base64 (for the enclave seal handoff). */
 export async function exportContentKey(key: CryptoKey): Promise<string> {
   const raw = await crypto.subtle.exportKey("raw", key);
   return bytesToBase64Url(new Uint8Array(raw));

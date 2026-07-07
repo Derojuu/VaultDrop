@@ -3,6 +3,7 @@ import { Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
 
 import { Providers } from "@/app/providers";
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE } from "@/lib/constants";
+import { env } from "@/lib/env";
 
 import "./globals.css";
 
@@ -27,11 +28,61 @@ export const metadata: Metadata = {
   },
   description: APP_DESCRIPTION,
   applicationName: APP_NAME,
-  metadataBase: new URL("https://vaultdrop.app"),
+  metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
+  keywords: [
+    "VaultDrop",
+    "Flare",
+    "Confidential Compute",
+    "confidential compute apps",
+    "TEE",
+    "secure file sharing",
+    "end-to-end encryption",
+    "key custody",
+    "attestation",
+    "Coston2",
+    "token gating",
+    "NFT gating",
+  ],
+  authors: [{ name: APP_NAME }],
+  creator: APP_NAME,
+  publisher: APP_NAME,
+  category: "security",
+  alternates: {
+    canonical: "/",
+  },
+  icons: {
+    icon: [
+      { url: "/logo1.svg", type: "image/svg+xml" },
+      { url: "/logo1.png", type: "image/png", sizes: "1024x1024" },
+    ],
+    shortcut: "/logo1.svg",
+    apple: [{ url: "/logo1.png", sizes: "1024x1024", type: "image/png" }],
+  },
   openGraph: {
     title: `${APP_NAME} — ${APP_TAGLINE}`,
     description: APP_DESCRIPTION,
+    url: "/",
+    siteName: APP_NAME,
     type: "website",
+    locale: "en_US",
+    images: [
+      {
+        url: "/logo1.png",
+        width: 1024,
+        height: 1024,
+        alt: `${APP_NAME} — ${APP_TAGLINE}`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${APP_NAME} — ${APP_TAGLINE}`,
+    description: APP_DESCRIPTION,
+    images: ["/logo1.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

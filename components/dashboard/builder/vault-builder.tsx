@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { isAddress, parseUnits } from "viem";
 
 import { SealingAnimation } from "@/components/dashboard/builder/sealing-animation";
 import { Stepper } from "@/components/dashboard/builder/stepper";
@@ -28,7 +29,8 @@ import { CONDITION_LIST, CONDITION_META } from "@/lib/conditions";
 import { MAX_UPLOAD_BYTES, type ConditionKind } from "@/lib/constants";
 import { sealFile } from "@/lib/crypto/content-cipher";
 import { cn } from "@/lib/utils";
-import { putBlob } from "@/services/blob-store";
+import { uploadCiphertext } from "@/services/blob-store";
+import { sealToEnclave } from "@/services/enclave";
 import { formatBytes } from "@/utils/format";
 import type { AccessCondition, Vault } from "@/types";
 
@@ -51,6 +53,12 @@ export function VaultBuilder() {
   const [passphrase, setPassphrase] = useState("");
   const [expiryDays, setExpiryDays] = useState("30");
   const [downloadLimit, setDownloadLimit] = useState("2");
+  const [walletAllow, setWalletAllow] = useState("");
+  const [tokenContract, setTokenContract] = useState("");
+  const [tokenMin, setTokenMin] = useState("1");
+  const [tokenDecimals, setTokenDecimals] = useState("18");
+  const [nftContract, setNftContract] = useState("");
+  const [nftTokenId, setNftTokenId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SealResult | null>(null);
   const [sealing, setSealing] = useState(false);
@@ -83,9 +91,47 @@ export function VaultBuilder() {
     return [...selected].map((kind) => {
       const meta = CONDITION_META[kind];
       let label = meta.label;
-      if (kind === "expiry") label = `Expires in ${expiryDays} days`;
-      if (kind === "download-limit") label = `Max ${downloadLimit} downloads`;
-      return { id: kind, kind, label, enclaveEvaluated: meta.enclave };
+      let config: Record<string, unknown> | undefined;
+      if (kind === "expiry") {
+        label = `Expires in ${expiryDays} days`;
+        config = { days: Number(expiryDays) };
+      }
+      if (kind === "download-limit") {
+        label = `Max ${downloadLimit} downloads`;
+        config = { max: Number(downloadLimit) };
+      }
+      if (kind === "wallet") {
+        const allow = walletAllow
+          .split(/[\s,]+/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+        label = `Allowed wallet${allow.length === 1 ? "" : "s"} (${allow.length})`;
+        config = { allow };
+      }
+      if (kind === "token") {
+        let minBaseUnits = "1";
+        try {
+          minBaseUnits = parseUnits(
+            tokenMin || "0",
+            Number(tokenDecimals) || 18,
+          ).toString();
+        } catch {
+          minBaseUnits = "1";
+        }
+        label = `Holds ≥ ${tokenMin} token`;
+        config = {
+          contract: tokenContract.trim(),
+          minBaseUnits,
+          min: tokenMin,
+          decimals: Number(tokenDecimals) || 18,
+        };
+      }
+      if (kind === "nft") {
+        const tokenId = nftTokenId.trim();
+        label = tokenId ? `Owns NFT #${tokenId}` : "Owns NFT from collection";
+        config = { contract: nftContract.trim(), tokenId: tokenId || undefined };
+      }
+      return { id: kind, kind, label, enclaveEvaluated: meta.enclave, config };
     });
   }
 
@@ -100,6 +146,17 @@ export function VaultBuilder() {
         return setError("Add at least one access condition.");
       if (selected.has("passphrase") && passphrase.trim().length < 4)
         return setError("Passphrase must be at least 4 characters.");
+      if (selected.has("wallet")) {
+        const allow = walletAllow.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
+        if (allow.length === 0)
+          return setError("Add at least one allowed wallet address.");
+        if (!allow.every((a) => isAddress(a)))
+          return setError("One or more wallet addresses are invalid.");
+      }
+      if (selected.has("token") && !isAddress(tokenContract.trim()))
+        return setError("Enter a valid token contract address.");
+      if (selected.has("nft") && !isAddress(nftContract.trim()))
+        return setError("Enter a valid NFT contract address.");
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
@@ -110,37 +167,40 @@ export function VaultBuilder() {
     try {
       // 1. Real client-side encryption — plaintext never leaves the browser.
       const sealed = await sealFile(file);
-      // 2. Record vault metadata (no key here). Run alongside a minimum
-      //    animation window so the seal sequence is always seen.
+      const conditions = buildConditions();
+      // 2. Record vault metadata (no key, no ciphertext yet). Run alongside a
+      //    minimum animation window so the seal sequence is always seen.
       const [vault] = await Promise.all([
         create.mutateAsync({
           name: name.trim(),
           fileName: sealed.name,
           fileSize: sealed.size,
           mimeType: sealed.type,
-          conditions: buildConditions(),
+          conditions,
           ivB64: sealed.ivB64,
           contentHash: sealed.contentHash,
         }),
         new Promise((resolve) => setTimeout(resolve, 2400)),
       ]);
-      // 3. Persist ciphertext (blob store stands in for remote storage, Step 3).
-      await putBlob({
-        id: vault.id,
-        ciphertext: sealed.ciphertext,
-        ivB64: sealed.ivB64,
-        name: sealed.name,
-        type: sealed.type,
-        size: sealed.size,
+      // 3. Seal the content key into the enclave. The CEK + passphrase are
+      //    ECIES-wrapped to the enclave's key in this browser, so the app server
+      //    and database never see them — only the enclave can open the envelope.
+      await sealToEnclave({
+        vaultId: vault.id,
+        cekB64Url: sealed.keyB64Url,
+        passphrase: selected.has("passphrase") ? passphrase : undefined,
+        conditions: conditions.map((c) => ({ kind: c.kind, config: c.config })),
       });
-      // 4. Build the E2E link — the content key rides in the URL fragment, which
-      //    browsers never send to a server. (Step 4 moves it into the enclave.)
+      // 4. Upload ciphertext (Postgres). Ciphertext only — never the key.
+      await uploadCiphertext(vault.id, sealed.ciphertext);
+      // 5. The link carries ONLY the vault id. The key lives in the enclave and
+      //    is released only when the recipient satisfies the policy.
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
-      const link = `${origin}/v/${vault.id}#k=${sealed.keyB64Url}`;
+      const link = `${origin}/v/${vault.id}`;
       setResult({ vault, link });
       setStep(3);
-      toast.success("Vault sealed · file encrypted client-side");
+      toast.success("Vault sealed · key sealed in the enclave");
     } catch {
       toast.error("Sealing failed — try again.");
     } finally {
@@ -322,6 +382,92 @@ export function VaultBuilder() {
                 </div>
               </div>
             )}
+
+            {(selected.has("wallet") ||
+              selected.has("token") ||
+              selected.has("nft")) && (
+              <div className="border-vd-bd bg-vd-card flex flex-col gap-3 rounded-[12px] border p-4">
+                <div className="flex items-center gap-1.5">
+                  <MonoLabel tone="accent">On-chain rules · Coston2</MonoLabel>
+                  <ShieldCheck className="text-vd-pos size-3" />
+                </div>
+
+                {selected.has("wallet") && (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="wallet-allow">Allowed wallet addresses</Label>
+                    <textarea
+                      id="wallet-allow"
+                      value={walletAllow}
+                      onChange={(e) => setWalletAllow(e.target.value)}
+                      placeholder="0xabc… , 0xdef…  (comma or newline separated)"
+                      rows={2}
+                      className="border-vd-bd2 bg-vd-card2 text-vd-tx placeholder:text-vd-tx3 focus:border-vd-accent/60 min-h-[64px] resize-y rounded-[10px] border px-3 py-2 font-mono text-[12px] outline-none"
+                    />
+                    <p className="text-vd-tx3 text-[11px]">
+                      The recipient signs a challenge; the enclave recovers their
+                      address and checks this list.
+                    </p>
+                  </div>
+                )}
+
+                {selected.has("token") && (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="token-contract">ERC-20 contract</Label>
+                    <Input
+                      id="token-contract"
+                      value={tokenContract}
+                      onChange={(e) => setTokenContract(e.target.value)}
+                      placeholder="0x… token address on Coston2"
+                      className="font-mono text-[12px]"
+                    />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="token-min">Minimum balance</Label>
+                        <Input
+                          id="token-min"
+                          value={tokenMin}
+                          onChange={(e) => setTokenMin(e.target.value)}
+                          placeholder="1"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="token-decimals">Decimals</Label>
+                        <Input
+                          id="token-decimals"
+                          type="number"
+                          min={0}
+                          max={36}
+                          value={tokenDecimals}
+                          onChange={(e) => setTokenDecimals(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selected.has("nft") && (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="nft-contract">ERC-721 collection</Label>
+                    <Input
+                      id="nft-contract"
+                      value={nftContract}
+                      onChange={(e) => setNftContract(e.target.value)}
+                      placeholder="0x… collection address on Coston2"
+                      className="font-mono text-[12px]"
+                    />
+                    <Label htmlFor="nft-token" className="mt-1">
+                      Specific token ID (optional)
+                    </Label>
+                    <Input
+                      id="nft-token"
+                      value={nftTokenId}
+                      onChange={(e) => setNftTokenId(e.target.value)}
+                      placeholder="Leave blank to accept any token in the collection"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -375,8 +521,9 @@ export function VaultBuilder() {
               <KeyRound className="text-vd-accent2 mt-0.5 size-4 shrink-0" />
               <p className="text-vd-tx2 text-[12.5px] leading-relaxed">
                 On seal, your file is encrypted in-browser with a fresh AES-256
-                key. Only ciphertext is stored; the key travels with the link
-                today and moves into the Flare enclave next.
+                key. Only ciphertext is stored; the key is sealed inside the
+                Flare enclave and released only when a recipient satisfies these
+                conditions.
               </p>
             </div>
           </div>
@@ -456,9 +603,9 @@ function ShareResult({ vault, link }: { vault: Vault; link: string }) {
           Vault sealed
         </h3>
         <p className="text-vd-tx2 mt-1.5 max-w-[400px] text-[13.5px] leading-relaxed">
-          “{vault.name}” is encrypted and sealed. Share the link — the key rides
-          in its <span className="text-vd-accent2 font-mono">#</span> fragment,
-          which never reaches any server.
+          “{vault.name}” is encrypted and its key is sealed in the enclave. The
+          link alone can’t open it — the recipient must satisfy your conditions,
+          and the enclave releases the key only then.
         </p>
       </div>
 

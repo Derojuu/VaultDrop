@@ -1,25 +1,41 @@
-import { MOCK_VAULTS } from "@/lib/mock-data";
 import type { AccessCondition, Vault } from "@/types";
 
 /**
- * Mock vault data-access layer. In-memory and client-side for the hackathon
- * build — swap these for real API/enclave calls without touching the hooks
- * that consume them.
+ * Vault metadata data-access — talks to the app's own /api/vaults route
+ * handlers (which persist to Postgres). Relative URLs so it works on
+ * localhost, ngrok, or a deployed origin without config.
+ *
+ * The content key is never sent here — only metadata. That's the point.
  */
 
-// Session-lived store, seeded from the mock fixtures.
-let store: Vault[] = [...MOCK_VAULTS];
-
-function delay<T>(value: T, ms = 350): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, init);
+  const isJson = res.headers
+    .get("content-type")
+    ?.includes("application/json");
+  const payload = isJson ? await res.json().catch(() => null) : null;
+  if (!res.ok) {
+    const message =
+      (payload as { message?: string } | null)?.message ?? res.statusText;
+    throw new Error(message);
+  }
+  return payload as T;
 }
 
 export async function listVaults(): Promise<Vault[]> {
-  return delay([...store]);
+  const { vaults } = await jsonFetch<{ vaults: Vault[] }>("/api/vaults");
+  return vaults;
 }
 
 export async function getVault(id: string): Promise<Vault | null> {
-  return delay(store.find((v) => v.id === id) ?? null);
+  try {
+    const { vault } = await jsonFetch<{ vault: Vault }>(
+      `/api/vaults/${encodeURIComponent(id)}`,
+    );
+    return vault;
+  } catch {
+    return null;
+  }
 }
 
 export interface CreateVaultInput {
@@ -28,44 +44,27 @@ export interface CreateVaultInput {
   fileSize: number;
   mimeType: string;
   conditions: AccessCondition[];
-  /** Real AES-GCM IV (base64) for the encrypted blob. */
   ivB64?: string;
-  /** SHA-256 (hex) of the plaintext. */
   contentHash?: string;
 }
 
-/**
- * Records vault metadata. The file is already encrypted client-side and the
- * ciphertext stored separately (blob-store); the content key never reaches
- * this layer — that's the point. Enclave sealing lands in Step 4.
- */
 export async function createVault(input: CreateVaultInput): Promise<Vault> {
-  const now = new Date().toISOString();
-  const rand = Math.random().toString(36).slice(2, 8);
-  const vault: Vault = {
-    id: `vlt_${rand}`,
-    name: input.name,
-    fileName: input.fileName,
-    fileSize: input.fileSize,
-    mimeType: input.mimeType,
-    status: "sealed",
-    network: "coston2",
-    createdAt: now,
-    updatedAt: now,
-    sealRef: `seal_0x${rand}`,
-    conditions: input.conditions,
-    ivB64: input.ivB64,
-    contentHash: input.contentHash,
-  };
-  store = [vault, ...store];
-  return delay(vault, 600);
+  const { vault } = await jsonFetch<{ vault: Vault }>("/api/vaults", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return vault;
 }
 
 export async function revokeVault(id: string): Promise<Vault | null> {
-  store = store.map((v) =>
-    v.id === id
-      ? { ...v, status: "revoked", updatedAt: new Date().toISOString() }
-      : v,
-  );
-  return delay(store.find((v) => v.id === id) ?? null);
+  try {
+    const { vault } = await jsonFetch<{ vault: Vault }>(
+      `/api/vaults/${encodeURIComponent(id)}/revoke`,
+      { method: "POST" },
+    );
+    return vault;
+  } catch {
+    return null;
+  }
 }
