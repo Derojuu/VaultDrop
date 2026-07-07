@@ -1,15 +1,7 @@
-import { Settings } from "lucide-react";
-
-import { ComingSoon } from "@/components/dashboard/coming-soon";
+import { SettingsView } from "@/components/dashboard/settings-view";
 
 export const metadata = { title: "Settings" };
 
 export default function SettingsPage() {
-  return (
-    <ComingSoon
-      icon={Settings}
-      title="Settings"
-      description="Connect a wallet, choose your Flare network, and manage encryption defaults for new vaults."
-    />
-  );
+  return <SettingsView />;
 }

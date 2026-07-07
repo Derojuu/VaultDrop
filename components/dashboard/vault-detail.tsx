@@ -145,7 +145,7 @@ export function VaultDetail({ id }: { id: string }) {
           </div>
         )}
         <Link
-          href="/enclave"
+          href="/dashboard/enclave"
           className="text-vd-accent2 hover:text-vd-accent ml-auto text-[12px] font-medium"
         >
           Verify the enclave →
