@@ -1,5 +1,7 @@
 # VaultDrop
 
+<img width="1792" height="576" alt="grok_image_1783445123827" src="https://github.com/user-attachments/assets/e3239bd6-4065-4f62-8b4e-0fcd41dc805f" />
+
 **Every file has rules — because the key lives where no one can touch it.**
 
 A secure file-sharing app where the decryption key is sealed inside a Flare Confidential Compute
