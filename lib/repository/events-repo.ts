@@ -64,7 +64,8 @@ function toEvent(r: EventRow): VaultEvent {
 }
 
 /** Recent events across all vaults (or one vault), newest first. */
-export async function listEvents(opts?: {
+export async function listEvents(opts: {
+  ownerId: string;
   vaultId?: string;
   limit?: number;
 }): Promise<VaultEvent[]> {
@@ -76,11 +77,13 @@ export async function listEvents(opts?: {
         select e.*, v.name as vault_name
         from vault_events e join vaults v on v.id = e.vault_id
         where e.vault_id = ${opts.vaultId}
+          and v.owner_id = ${opts.ownerId}
         order by e.at desc limit ${limit}
       `
     : await sql<EventRow[]>`
         select e.*, v.name as vault_name
         from vault_events e join vaults v on v.id = e.vault_id
+        where v.owner_id = ${opts.ownerId}
         order by e.at desc limit ${limit}
       `;
   return rows.map(toEvent);
@@ -95,19 +98,21 @@ interface RecipientRow {
 }
 
 /** Distinct proven wallets with their unlock/deny tallies. */
-export async function listRecipients(): Promise<Recipient[]> {
+export async function listRecipients(ownerId: string): Promise<Recipient[]> {
   await ensureSchema();
   const rows = await db()<RecipientRow[]>`
     select
-      wallet,
-      count(*) filter (where type = 'unlocked') as unlocks,
-      count(*) filter (where type = 'denied') as denials,
-      max(at) as last_at,
-      array_agg(distinct vault_id) as vault_ids
-    from vault_events
-    where wallet is not null
-    group by wallet
-    order by max(at) desc
+      e.wallet,
+      count(*) filter (where e.type = 'unlocked') as unlocks,
+      count(*) filter (where e.type = 'denied') as denials,
+      max(e.at) as last_at,
+      array_agg(distinct e.vault_id) as vault_ids
+    from vault_events e
+    join vaults v on v.id = e.vault_id
+    where e.wallet is not null
+      and v.owner_id = ${ownerId}
+    group by e.wallet
+    order by max(e.at) desc
   `;
   return rows.map((r) => ({
     wallet: r.wallet,

@@ -23,7 +23,7 @@ export function FooterCta() {
 
       <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
         <Button asChild size="lg" className="sheen relative overflow-hidden">
-          <Link href="/dashboard">
+          <Link href="/login?next=/dashboard/new">
             Create a vault
             <ArrowRight />
           </Link>

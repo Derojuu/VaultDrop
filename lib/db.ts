@@ -44,6 +44,7 @@ export function ensureSchema(): Promise<void> {
     await s`
       create table if not exists vaults (
         id text primary key,
+        owner_id text not null,
         name text not null,
         file_name text not null,
         file_size bigint not null,
@@ -58,6 +59,8 @@ export function ensureSchema(): Promise<void> {
         conditions jsonb not null default '[]'::jsonb
       )
     `;
+    await s`alter table vaults add column if not exists owner_id text`;
+    await s`create index if not exists vaults_owner_idx on vaults (owner_id, created_at desc)`;
     await s`
       create table if not exists vault_blobs (
         id text primary key references vaults(id) on delete cascade,

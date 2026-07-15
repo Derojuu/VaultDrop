@@ -19,6 +19,8 @@ Set these in Vercel → Project → Settings → Environment Variables. They mir
 | Variable | Required | Value |
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | Supabase **pooler** connection string. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase publishable key. The legacy anon key also works via `NEXT_PUBLIC_SUPABASE_ANON_KEY`. |
 | `NEXT_PUBLIC_APP_URL` | Yes | Your deployment URL, e.g. `https://vaultdrop.vercel.app`. |
 | `NEXT_PUBLIC_FLARE_NETWORK` | Yes | `coston2` |
 | `ENCLAVE_MODE` | Yes | `simulated` |
@@ -28,7 +30,23 @@ Set these in Vercel → Project → Settings → Environment Variables. They mir
 > Use the Supabase **connection pooler** URL (not the direct connection). The DB
 > client sets `prepare: false`, which is required behind the pooler.
 
-## 3. Deploy
+## 3. Configure Google authentication
+
+1. In Supabase, open **Authentication -> Providers -> Google** and enable it.
+2. Create Google OAuth credentials and paste the client ID and secret into the
+   Supabase Google provider settings. Use the Supabase callback URL shown there
+   as the authorized redirect URI in Google Cloud.
+3. In Supabase **Authentication -> URL Configuration**, set the site URL and
+   allow both callback URLs:
+   - `http://localhost:3000/auth/callback`
+   - `https://your-domain.example/auth/callback`
+4. Copy the project URL and publishable key from Supabase into the environment
+   variables above.
+
+The same **Continue with Google** action handles both first-time signup and
+returning-user login.
+
+## 4. Deploy
 
 1. Push the repo to GitHub.
 2. In Vercel, **Import** the repo. The framework is auto-detected as Next.js;
@@ -40,7 +58,7 @@ On the first request, the app creates its tables (`vaults`, `vault_blobs`,
 `enclave_identity`, `vault_seals`) and generates the enclave keypair, persisting
 it in `enclave_identity`. Nothing else to configure.
 
-## 4. Things to know
+## 5. Things to know
 
 - **Runtime.** All API routes run on the Node.js runtime (they use Web Crypto +
   the `postgres` driver). Do not switch them to the Edge runtime.

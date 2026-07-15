@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getAuthenticatedUser } from "@/lib/auth";
 import { getEnclaveEngine } from "@/lib/enclave/engine";
 import { recordEvent } from "@/lib/repository/events-repo";
-import { getVault } from "@/lib/repository/vault-repo";
+import { getOwnedVault } from "@/lib/repository/vault-repo";
 import type { SealRequest } from "@/lib/enclave/types";
 
 /**
@@ -27,6 +28,11 @@ const sealSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -43,7 +49,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const vault = await getVault(parsed.data.vaultId);
+    const vault = await getOwnedVault(parsed.data.vaultId, user.id);
     if (!vault) {
       return NextResponse.json({ message: "Vault not found" }, { status: 404 });
     }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getAuthenticatedUser } from "@/lib/auth";
 import { insertVault, listVaults } from "@/lib/repository/vault-repo";
 import { CONDITION_KINDS } from "@/lib/constants";
 
@@ -36,8 +37,13 @@ function vaultId(): string {
 }
 
 export async function GET() {
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const vaults = await listVaults();
+    const vaults = await listVaults(user.id);
     return NextResponse.json({ vaults });
   } catch (err) {
     return NextResponse.json(
@@ -48,6 +54,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -67,6 +78,7 @@ export async function POST(request: Request) {
     const id = vaultId();
     const vault = await insertVault({
       id,
+      ownerId: user.id,
       ...parsed.data,
       network: "coston2",
       sealRef: `seal_0x${id.slice(4, 12)}`,

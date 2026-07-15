@@ -52,7 +52,7 @@ export function Hero() {
               size="lg"
               className="sheen relative overflow-hidden"
             >
-              <Link href="/dashboard">
+              <Link href="/login?next=/dashboard/new">
                 Create a vault
                 <ArrowRight />
               </Link>

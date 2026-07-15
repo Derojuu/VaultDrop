@@ -4,6 +4,7 @@ import type { AccessCondition, Vault, VaultStatus } from "@/types";
 
 interface Row {
   id: string;
+  owner_id: string | null;
   name: string;
   file_name: string;
   file_size: string | number;
@@ -36,10 +37,12 @@ function toVault(r: Row): Vault {
   };
 }
 
-export async function listVaults(): Promise<Vault[]> {
+export async function listVaults(ownerId: string): Promise<Vault[]> {
   await ensureSchema();
   const rows = await db()<Row[]>`
-    select * from vaults order by created_at desc
+    select * from vaults
+    where owner_id = ${ownerId}
+    order by created_at desc
   `;
   return rows.map(toVault);
 }
@@ -52,8 +55,22 @@ export async function getVault(id: string): Promise<Vault | null> {
   return rows[0] ? toVault(rows[0]) : null;
 }
 
+export async function getOwnedVault(
+  id: string,
+  ownerId: string,
+): Promise<Vault | null> {
+  await ensureSchema();
+  const rows = await db()<Row[]>`
+    select * from vaults
+    where id = ${id} and owner_id = ${ownerId}
+    limit 1
+  `;
+  return rows[0] ? toVault(rows[0]) : null;
+}
+
 export interface InsertVaultInput {
   id: string;
+  ownerId: string;
   name: string;
   fileName: string;
   fileSize: number;
@@ -70,22 +87,25 @@ export async function insertVault(v: InsertVaultInput): Promise<Vault> {
   const sql = db();
   const rows = await sql<Row[]>`
     insert into vaults
-      (id, name, file_name, file_size, mime_type, status, network,
+      (id, owner_id, name, file_name, file_size, mime_type, status, network,
        seal_ref, iv_b64, content_hash, conditions)
     values
-      (${v.id}, ${v.name}, ${v.fileName}, ${v.fileSize}, ${v.mimeType},
-       'sealed', ${v.network}, ${v.sealRef}, ${v.ivB64 ?? null},
+      (${v.id}, ${v.ownerId}, ${v.name}, ${v.fileName}, ${v.fileSize},
+       ${v.mimeType}, 'sealed', ${v.network}, ${v.sealRef}, ${v.ivB64 ?? null},
        ${v.contentHash ?? null}, ${sql.json(v.conditions as never)})
     returning *
   `;
   return toVault(rows[0]);
 }
 
-export async function revokeVault(id: string): Promise<Vault | null> {
+export async function revokeVault(
+  id: string,
+  ownerId: string,
+): Promise<Vault | null> {
   await ensureSchema();
   const rows = await db()<Row[]>`
     update vaults set status = 'revoked', updated_at = now()
-    where id = ${id}
+    where id = ${id} and owner_id = ${ownerId}
     returning *
   `;
   return rows[0] ? toVault(rows[0]) : null;

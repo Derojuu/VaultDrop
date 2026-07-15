@@ -10,6 +10,7 @@ import {
   LogOut,
   PanelLeft,
   Plus,
+  Unplug,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -93,7 +94,13 @@ function NavRow({
   );
 }
 
-function SidebarBody({ scope }: { scope: "desktop" | "mobile" }) {
+function SidebarBody({
+  scope,
+  user,
+}: {
+  scope: "desktop" | "mobile";
+  user: DashboardUser;
+}) {
   const pathname = usePathname();
   const collapsed = useUiStore((s) => s.sidebarCollapsed);
   const toggle = useUiStore((s) => s.toggleSidebar);
@@ -108,6 +115,7 @@ function SidebarBody({ scope }: { scope: "desktop" | "mobile" }) {
   const disconnect = useWalletStore((s) => s.disconnect);
   const walletAvailable = useWalletAvailable();
   const noWallet = walletAvailable === false && !address;
+  const userInitial = (user.name || user.email).trim().charAt(0).toUpperCase();
 
   async function onConnect() {
     try {
@@ -227,6 +235,41 @@ function SidebarBody({ scope }: { scope: "desktop" | "mobile" }) {
         ))}
 
         {collapsed ? (
+          <form action="/auth/signout" method="post" className="mt-1">
+            <button
+              type="submit"
+              title={`Sign out ${user.email}`}
+              className="border-vd-bd bg-vd-card text-vd-tx mx-auto grid size-8 place-items-center rounded-full border text-xs font-bold transition-colors hover:bg-white/[0.08]"
+            >
+              {userInitial}
+            </button>
+          </form>
+        ) : (
+          <div className="border-vd-bd bg-vd-card mt-1 flex items-center gap-2.5 rounded-[11px] border p-2.5">
+            <span className="bg-vd-accent/18 text-vd-accent2 grid size-7 shrink-0 place-items-center rounded-full text-xs font-extrabold">
+              {userInitial}
+            </span>
+            <div className="min-w-0 leading-tight">
+              <div className="text-vd-tx truncate text-[12.5px] font-semibold">
+                {user.name}
+              </div>
+              <div className="text-vd-tx3 truncate text-[10px]">
+                {user.email}
+              </div>
+            </div>
+            <form action="/auth/signout" method="post" className="ml-auto">
+              <button
+                type="submit"
+                title="Sign out"
+                className="text-vd-tx3 hover:text-vd-dng grid size-7 shrink-0 place-items-center rounded-[8px] transition-colors hover:bg-white/[0.05]"
+              >
+                <LogOut className="size-3.5" />
+              </button>
+            </form>
+          </div>
+        )}
+
+        {collapsed ? (
           noWallet ? (
             <a
               href={GET_WALLET_URL}
@@ -268,10 +311,10 @@ function SidebarBody({ scope }: { scope: "desktop" | "mobile" }) {
             </div>
             <button
               onClick={disconnect}
-              title="Disconnect"
+              title="Disconnect wallet"
               className="text-vd-tx3 hover:text-vd-dng ml-auto grid size-7 shrink-0 place-items-center rounded-[8px] transition-colors hover:bg-white/[0.05]"
             >
-              <LogOut className="size-3.5" />
+              <Unplug className="size-3.5" />
             </button>
           </div>
         ) : noWallet ? (
@@ -327,7 +370,12 @@ function SidebarBody({ scope }: { scope: "desktop" | "mobile" }) {
   );
 }
 
-export function DashboardSidebar() {
+export interface DashboardUser {
+  name: string;
+  email: string;
+}
+
+export function DashboardSidebar({ user }: { user: DashboardUser }) {
   const collapsed = useUiStore((s) => s.sidebarCollapsed);
   const mobileOpen = useUiStore((s) => s.mobileNavOpen);
   const setMobile = useUiStore((s) => s.setMobileNavOpen);
@@ -341,7 +389,7 @@ export function DashboardSidebar() {
           collapsed ? "w-[72px]" : "w-[264px]",
         )}
       >
-        <SidebarBody scope="desktop" />
+        <SidebarBody scope="desktop" user={user} />
       </aside>
 
       {/* Mobile drawer */}
@@ -365,7 +413,7 @@ export function DashboardSidebar() {
             mobileOpen ? "translate-x-0" : "-translate-x-full",
           )}
         >
-          <SidebarBody scope="mobile" />
+          <SidebarBody scope="mobile" user={user} />
         </div>
       </div>
     </>

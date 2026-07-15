@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { GitBranch } from "lucide-react";
 
 import { LogoMark } from "@/components/brand/logo";
@@ -19,8 +20,14 @@ export function SiteFooter() {
 
       <nav
         aria-label="Footer"
-        className="text-vd-tx2 ml-auto flex items-center gap-5 text-[13px] font-medium"
+        className="text-vd-tx2 ml-auto flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-[13px] font-medium"
       >
+        <Link href="/privacy" className="hover:text-vd-tx transition-colors">
+          Privacy
+        </Link>
+        <Link href="/terms" className="hover:text-vd-tx transition-colors">
+          Terms
+        </Link>
         <a
           href="https://dev.flare.network/"
           target="_blank"
@@ -30,7 +37,7 @@ export function SiteFooter() {
           Flare Docs
         </a>
         <a
-          href="https://github.com/"
+          href="https://github.com/Derojuu/VaultDrop"
           target="_blank"
           rel="noreferrer"
           className="hover:text-vd-tx inline-flex items-center gap-1.5 transition-colors"
@@ -38,9 +45,9 @@ export function SiteFooter() {
           <GitBranch className="size-3.5" />
           GitHub
         </a>
-        <a href="#privacy" className="hover:text-vd-tx transition-colors">
+        <Link href="/#privacy" className="hover:text-vd-tx transition-colors">
           Trust model
-        </a>
+        </Link>
       </nav>
     </footer>
   );

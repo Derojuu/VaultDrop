@@ -36,7 +36,7 @@ export function GetStarted() {
                 enforces them. Revoke everything in one click.
               </p>
               <Link
-                href="/dashboard"
+                href="/login?next=/dashboard/new"
                 className="mt-1 inline-flex items-center gap-2 rounded-full border border-white/20 bg-[#0a0b0db8] px-4 py-2.5 text-[13px] font-bold text-white backdrop-blur transition-transform hover:-translate-y-0.5"
               >
                 <Upload className="size-3.5" />

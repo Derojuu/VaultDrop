@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { getAuthenticatedUser } from "@/lib/auth";
 import { getCiphertext, putCiphertext } from "@/lib/repository/blob-repo";
 import { recordEvent } from "@/lib/repository/events-repo";
-import { getVault } from "@/lib/repository/vault-repo";
+import { getOwnedVault, getVault } from "@/lib/repository/vault-repo";
 import { MAX_UPLOAD_BYTES } from "@/lib/constants";
 
 export const runtime = "nodejs";
@@ -13,9 +14,14 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
-    const vault = await getVault(id);
+    const vault = await getOwnedVault(id, user.id);
     if (!vault) {
       return NextResponse.json({ message: "Vault not found" }, { status: 404 });
     }

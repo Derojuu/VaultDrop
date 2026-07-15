@@ -140,6 +140,8 @@ Environment variables (full list in [`.env.example`](./.env.example), runbook in
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | Supabase Postgres (use the **pooler** URL). |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL used for Google authentication. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Public Supabase browser key. |
 | `NEXT_PUBLIC_APP_URL` | Yes | Canonical app URL. |
 | `NEXT_PUBLIC_FLARE_NETWORK` | Yes | `coston2` |
 | `ENCLAVE_MODE` | Yes | `simulated` (default) or `coston2`. |

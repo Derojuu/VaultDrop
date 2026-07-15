@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getAuthenticatedUser } from "@/lib/auth";
 import { deleteCiphertext } from "@/lib/repository/blob-repo";
 import { recordEvent } from "@/lib/repository/events-repo";
 import { revokeVault } from "@/lib/repository/vault-repo";
@@ -11,9 +12,14 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
-    const vault = await revokeVault(id);
+    const vault = await revokeVault(id, user.id);
     if (!vault) {
       return NextResponse.json({ message: "Vault not found" }, { status: 404 });
     }

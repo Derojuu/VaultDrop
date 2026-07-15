@@ -6,9 +6,9 @@ import { connectWallet } from "@/lib/chain/wallet";
 
 /**
  * The address the user has connected in this session, shared across the UI
- * (sidebar account chip, settings). VaultDrop has no accounts — this is only
- * the wallet the browser has authorized, used to prove address ownership when
- * unlocking gated vaults. Nothing is persisted; a refresh clears it.
+ * (sidebar wallet chip, settings). This is separate from the authenticated
+ * VaultDrop account and is only used to prove address ownership when unlocking
+ * gated vaults. Nothing is persisted; a refresh clears it.
  */
 interface WalletState {
   address: string | null;

@@ -4,9 +4,9 @@ import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 
 const NAV_LINKS = [
-  { href: "#how-it-works", label: "How it works" },
-  { href: "#trust", label: "Trust model" },
-  { href: "#use-cases", label: "Use cases" },
+  { href: "/#how-it-works", label: "How it works" },
+  { href: "/#trust", label: "Trust model" },
+  { href: "/#use-cases", label: "Use cases" },
 ];
 
 /**
@@ -35,7 +35,7 @@ export function SiteNav() {
       </nav>
 
       <Button asChild size="sm" className="ml-auto md:ml-0">
-        <Link href="/dashboard">Open app</Link>
+        <Link href="/login?next=/dashboard">Open app</Link>
       </Button>
     </header>
   );

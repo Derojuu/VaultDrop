@@ -92,8 +92,8 @@ export function SettingsView() {
           Settings
         </h1>
         <p className="text-vd-tx2 mt-1 text-[13.5px]">
-          The live security posture of this deployment. Everything here is read
-          from the running app — no stored profile, nothing simulated.
+          The live security posture of this deployment and your optional wallet
+          connection. Account controls are available in the sidebar.
         </p>
       </div>
 
